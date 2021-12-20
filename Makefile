@@ -16,7 +16,7 @@ docs:
 	sphinx-build -a docs docs/_build
 
 clean:
-	rm -rf fbgbp/*.c
+	rm -rf fbgbp/*.cpp
 	rm -rf fbgbp/*.so
 	rm -rf build
 	rm -rf dist

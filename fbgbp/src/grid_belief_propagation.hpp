@@ -48,9 +48,10 @@ public:
     ~GridBeliefPropagation();
 
     void run(
-        double precision /*=.1*/,
-        uint16_t max_iter /*=100*/,
-        double approximation_threshold /*=100.*/,
+        double precision, /*=.1*/
+        uint16_t max_iter, /*=100*/
+        double log_bound, /*=100.*/
+        bool taylor_approximation, /*=false*/
         uint64_t n_threads /*=1*/
     );
     void marginals(double* res);

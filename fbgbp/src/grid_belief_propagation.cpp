@@ -12,7 +12,7 @@ GridBeliefPropagation::GridBeliefPropagation(
     this->alpha = p / q;
     this->log_alpha = std::log(p) - std::log(q);
     this->n_nodes = 1;
-    for (int i = 0; i < n_dims; i++)
+    for (uint8_t i = 0; i < n_dims; i++)
         this->n_nodes *= shape[i];
 
     this->shape = new uint32_t[n_dims];
@@ -153,7 +153,8 @@ void GridBeliefPropagation::initialize_potentials(
 void GridBeliefPropagation::run(
     double precision=.1,
     uint16_t max_iter=100,
-    double approximation_threshold=100.,
+    double log_bound=100.,
+    bool taylor_approximation=false,
     uint64_t n_threads=1
 ) {
     // messages will alternate to save space
@@ -178,21 +179,25 @@ void GridBeliefPropagation::run(
                     )
                         message += (
                             (double) (from_neighbors[from_neighbor_i] != to)
-                        ) * last_messages[this->message_index[from] + from_neighbor_i];
+                        ) * last_messages[from_neighbor_i + this->message_index[from]];
 
-                    // Estimate using Taylor expansion based on threshold
-                    if (message < -approximation_threshold) {
+                    // If messages (which is actually the log-message) is
+                    // below/above a certain threshold, clip to bound to
+                    // prevent underflow/overflow.
+                    if (message < -log_bound) {
                         message = -this->log_alpha;
-                    } else if (message > approximation_threshold) {
+                    } else if (message > log_bound) {
                         message = this->log_alpha;
-                    } else {
-                        // double c = std::exp(message);
-                        // message = std::log((this->q + this->p * c) / (this->p + this->q * c));
+                    } else if (taylor_approximation) {
+                        // First two terms of Taylor series about x = 0.
                         message = message * (this->alpha - 1) / (this->alpha + 1)
                             - std::pow(message, 3) * (this->alpha * (this->alpha - 1))
                             / (3 * std::pow(1 + this->alpha, 3));
+                    } else {
+                        double c = std::exp(message);
+                        message = std::log((this->q + this->p * c) / (this->p + this->q * c));
                     }
-                    next_messages[this->message_index[to] + from_i] = message;
+                    next_messages[from_i + this->message_index[to]] = message;
                 }
             }
         });

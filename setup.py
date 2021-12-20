@@ -21,7 +21,7 @@ to_cythonize = [
         ],
         include_dirs=include_dirs,
         extra_compile_args=extra_compile_args,
-        language='c++'
+        language='c++',
     ),
 ]
 
@@ -32,10 +32,10 @@ setup(
     url='https://github.com/Lioscro/fbgbp',
     author='Kyung Hoi (Joseph) Min',
     author_email='phoenixter96@gmail.com',
-    description='',  # noqa
+    description='Optimized belief propagation on a grid MRF with binary states.',  # noqa
     long_description=long_description,
     long_description_content_type='text/markdown',
-    keywords='',
+    keywords='belief-propagation markov-random-field',
     python_requires='>=3.6',
     license='MIT',
     packages=find_packages(exclude=('tests', 'docs')),
@@ -43,7 +43,11 @@ setup(
     include_package_data=True,
     setup_requires=requirements,
     install_requires=requirements,
-    ext_modules=cythonize(to_cythonize, language_level='3'),
+    ext_modules=cythonize(
+        to_cythonize,
+        language_level='3',
+        compiler_directives={'embedsignature': True}
+    ),
     classifiers=[
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
