@@ -12,7 +12,12 @@ def read(path):
 long_description = read('README.md')
 
 include_dirs = ['fbgbp/seq/src', np.get_include()]
-extra_compile_args = ['-Wno-unused-variable', '-Wno-unused-function', '-O3']
+extra_compile_args = [
+    '-Wno-unused-variable',
+    '-Wno-unused-function',
+    '-O3',
+    '-std=c++11'
+]
 to_cythonize = [
     Extension(
         'fbgbp.grid_belief_propagation', [

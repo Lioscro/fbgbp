@@ -4,6 +4,8 @@
 GridBeliefPropagation::GridBeliefPropagation(
     uint8_t n_dims,
     const uint32_t* shape,
+    uint8_t max_neighbors,
+    int16_t** neighbor_offsets,
     const double* potentials0,
     const double* potentials1,
     double p,
@@ -17,15 +19,13 @@ GridBeliefPropagation::GridBeliefPropagation(
 
     this->shape = new uint32_t[n_dims];
     std::copy(&shape[0], &shape[n_dims], this->shape);
-    this->initialize_offsets();
-    this->initialize_graph();
+    this->initialize_graph(max_neighbors, neighbor_offsets);
     this->initialize_potentials(potentials0, potentials1);
 }
 
 GridBeliefPropagation::~GridBeliefPropagation() {
-    delete this->shape;
-    delete this->offsets;
-    delete this->n_neighbors;
+    delete[] this->shape;
+    delete[] this->n_neighbors;
     for (uint64_t i = 0; i < this->n_nodes; i++)
         delete[] this->neighbors[i];
     delete[] this->neighbors;
@@ -34,21 +34,12 @@ GridBeliefPropagation::~GridBeliefPropagation() {
     delete[] this->lambda;
 }
 
-void GridBeliefPropagation::initialize_offsets() {
-    this->offsets = new uint32_t[this->n_dims];
-    this->offsets[0] = 1;
-    for (int i = 1; i < this->n_dims; i++) {
-        uint32_t offset = 1;
-        for (int j = - i; j < 0; j++)
-            offset *= this->shape[this->n_dims + j];
-        this->offsets[i] = offset;
-    }
-}
-
-void GridBeliefPropagation::initialize_graph() {
+void GridBeliefPropagation::initialize_graph(
+    uint8_t max_neighbors, int16_t** neighbor_offsets
+) {
     // Create n_nodes x n_dims array of node coordinates
-    uint32_t* prod = new uint32_t[this->n_dims-1];
-    for (uint8_t i = 0; i < this->n_dims - 1; i++) {
+    uint32_t* prod = new uint32_t[this->n_dims];
+    for (uint8_t i = 0; i < this->n_dims; i++) {
         prod[i] = 1;
         for (uint8_t j = i+1; j < this->n_dims; j++)
             prod[i] *= this->shape[j];
@@ -58,59 +49,31 @@ void GridBeliefPropagation::initialize_graph() {
     for (uint64_t i = 0; i < this->n_nodes; i++) {
         node_coordinates[i] = new uint32_t[this->n_dims];
         uint64_t remaining = i;
-        for (int j = 0; j < this->n_dims - 1; j++) {
+        for (uint8_t j = 0; j < this->n_dims; j++) {
             node_coordinates[i][j] = remaining / prod[j];
             remaining %= prod[j];  // Does the compiler reuse previous result?
-
         }
-        node_coordinates[i][this->n_dims-1] = remaining;
     }
 
     // Compute neighbors
     this->n_neighbors = new uint8_t[this->n_nodes];
     this->neighbors = new uint64_t*[this->n_nodes];
-    uint64_t* neighbors_temp = new uint64_t[this->n_dims*2];
-    for (uint64_t i = 0; i < this->n_nodes; i++) {
-        uint32_t* node_coords = node_coordinates[i];
-        uint8_t n_neighbors = 0;
-        for (int j = 0; j < this->n_dims; j++) {
-            uint32_t i_temp = i - offsets[j];
-            if (i_temp >= 0 && i_temp < this->n_nodes) {
-                uint32_t* i_coords = node_coordinates[i_temp];
-                uint8_t count0 = 0;
-                uint8_t count1 = 0;
-                for (int k = 0; k < this->n_dims; k++) {
-                    count0 += node_coords[k] == i_coords[k];
-                    count1 += (
-                        node_coords[k] > i_coords[k] ?
-                        (node_coords[k] - i_coords[k]) :
-                        (i_coords[k] - node_coords[k])
-                    ) == 1;
-                }
-                if (count0 == this->n_dims - 1 && count1 == 1) {
-                    neighbors_temp[n_neighbors] = i_temp;
-                    n_neighbors++;
-                }
-            }
 
-            i_temp = i + offsets[j];
-            if (i_temp >= 0 && i_temp < this->n_nodes) {
-                uint32_t* i_coords = node_coordinates[i_temp];
-                uint8_t count0 = 0;
-                uint8_t count1 = 0;
-                for (int k = 0; k < this->n_dims; k++) {
-                    count0 += node_coords[k] == i_coords[k];
-                    count1 += (
-                        node_coords[k] > i_coords[k] ?
-                        (node_coords[k] - i_coords[k]) :
-                        (i_coords[k] - node_coords[k])
-                    ) == 1;
-                }
-                if (count0 == this->n_dims - 1 && count1 == 1) {
-                    neighbors_temp[n_neighbors] = i_temp;
-                    n_neighbors++;
-                }
+    uint64_t* neighbors_temp = new uint64_t[max_neighbors];
+    for (uint64_t i = 0; i < this->n_nodes; i++) {
+        uint8_t n_neighbors = 0;
+        uint32_t* node_coords = node_coordinates[i];
+        for (uint8_t j = 0; j < max_neighbors; j++) {
+            bool valid = true;
+            int16_t* neighbor_offset = neighbor_offsets[j];
+            uint32_t i_temp = 0;
+            for (uint8_t k = 0; k < this->n_dims; k++) {
+                int64_t coord = ((int64_t) node_coords[k]) + ((int64_t) neighbor_offset[k]);
+                valid = valid && coord >= 0 && coord < (int64_t) this->shape[k];
+                i_temp += coord * prod[k];
             }
+            neighbors_temp[n_neighbors] = i_temp;
+            n_neighbors += (uint8_t) valid;
         }
 
         this->n_neighbors[i] = n_neighbors;
@@ -122,7 +85,7 @@ void GridBeliefPropagation::initialize_graph() {
         );
     }
 
-    delete prod;
+    delete[] prod;
     delete[] neighbors_temp;
     for (uint64_t i = 0; i < this->n_nodes; i++)
         delete[] node_coordinates[i];
