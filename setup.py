@@ -33,7 +33,7 @@ to_cythonize = [
 requirements = read('requirements.txt').strip().split('\n')
 setup(
     name='fbgbp',
-    version='0.0.3',
+    version='0.0.4',
     url='https://github.com/Lioscro/fbgbp',
     author='Kyung Hoi (Joseph) Min',
     author_email='phoenixter96@gmail.com',
