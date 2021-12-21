@@ -7,13 +7,11 @@
 
 class GridBeliefPropagation {
 private:
-    uint64_t n_threads;
     uint64_t n_nodes;
     uint8_t n_dims;
     uint32_t* shape;
 
     // Variables defining edge/neighborhood structure.
-    uint32_t* offsets;
     uint8_t* n_neighbors;
     uint64_t** neighbors;
 
@@ -32,14 +30,15 @@ private:
     uint64_t* message_index;
     double* lambda;
 
-    void initialize_offsets();
-    void initialize_graph();
+    void initialize_graph(uint8_t max_neighbors, int16_t** neighbor_offsets);
     void initialize_potentials(const double* potentials0, const double* potentials1);
 
 public:
     GridBeliefPropagation(
         uint8_t n_dims,
         const uint32_t* shape,
+        uint8_t max_neighbors,
+        int16_t** neighbor_offsets,
         const double* potentials0,
         const double* potentials1,
         double p,

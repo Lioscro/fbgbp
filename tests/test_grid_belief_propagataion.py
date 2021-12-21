@@ -9,12 +9,15 @@ class TestGridBeliefPropagation(TestCase):
 
     def test_simple(self):
         shape = np.array([2, 2], dtype=np.uint32)
+        neighbor_offsets = np.array([
+            [-1, 0], [1, 0], [0, -1], [0, 1]
+        ], dtype=np.int16)
         potentials0 = np.full(4, 0.9)
         potentials1 = np.full(4, 0.1)
         p = 0.9
         q = 0.1
         bp = grid_belief_propagation.FastBinaryGridBeliefPropagation(
-            shape, potentials0, potentials1, p, q
+            shape, neighbor_offsets, potentials0, potentials1, p, q
         )
         bp.run()
         marginals = bp.marginals()
