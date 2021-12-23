@@ -16,6 +16,9 @@ cdef class FastBinaryGridBeliefPropagation:
     Args:
         shape: Shape of the grid as a Numpy array. Note that the dtype of the
             array must be `np.uint32`.
+        neighbor_offsets: 2D Numpy array where each row corresponds to a
+            potential neighbor, and the values correspond to the offests of
+            each dimension from a node to that neighbor.
         potentials0: 1D Numpy array of node potentials corresponding to state 0.
             This should be the array produced by calling `.flatten()` on the
             actual N-dimensional array.
