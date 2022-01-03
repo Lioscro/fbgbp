@@ -1,3 +1,4 @@
 include LICENSE
 include requirements.txt
 recursive-include fbgbp *
+exclude fbgbp/grid_belief_propagation.cpp
