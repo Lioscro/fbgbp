@@ -1,6 +1,6 @@
-import numpy as np
 from setuptools import find_packages, Extension, setup
 
+import numpy as np
 from Cython.Build import cythonize
 
 
@@ -11,7 +11,7 @@ def read(path):
 
 long_description = read('README.md')
 
-include_dirs = ['fbgbp/seq/src', np.get_include()]
+include_dirs = ['fbgbp/src', np.get_include()]
 extra_compile_args = [
     '-Wno-unused-variable',
     '-Wno-unused-function',
@@ -46,9 +46,6 @@ setup(
     packages=find_packages(exclude=('tests', 'docs')),
     zip_safe=False,
     include_package_data=True,
-    # There is a problem with using pyproject.toml file for these due to build
-    # isolation.
-    setup_requires=["setuptools>=42", "wheel", "Cython>=0.29.21", "numpy>=1.18.1"],
     install_requires=requirements,
     ext_modules=cythonize(
         to_cythonize,
