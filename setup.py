@@ -46,7 +46,9 @@ setup(
     packages=find_packages(exclude=('tests', 'docs')),
     zip_safe=False,
     include_package_data=True,
-    setup_requires=requirements,
+    # There is a problem with using pyproject.toml file for these due to build
+    # isolation.
+    setup_requires=["setuptools>=42", "wheel", "Cython>=0.29.21", "numpy>=1.18.1"],
     install_requires=requirements,
     ext_modules=cythonize(
         to_cythonize,
