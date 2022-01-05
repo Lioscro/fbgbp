@@ -1,0 +1,28 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python: [3.7, 3.8, 3.9]
+        os: [ubuntu-latest, macos-latest]
+    name: Test on ${{ matrix.os }} Python ${{ matrix.python }}
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@master
+      - name: Setup python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: x64
+      - name: Install dependencies
+        run: make install-all
+      - name: Run tests
+        run: make test
+      # - name: Upload coverage
+      #   run: bash <(curl -s https://codecov.io/bash)
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

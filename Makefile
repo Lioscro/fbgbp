@@ -1,4 +1,12 @@
-.PHONY : install test check build docs clean push_release
+.PHONY : install install-dev install-all test check build docs clean push_release
+
+install:
+	pip install .
+
+install-dev:
+	pip install -r dev-requirements.txt
+
+install-all: install-dev install
 
 test:
 	python setup.py build_ext --inplace
