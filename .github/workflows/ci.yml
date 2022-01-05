@@ -9,7 +9,7 @@ jobs:
       matrix:
         python: [3.7, 3.8, 3.9]
         os: [ubuntu-latest, macos-latest]
-    name: Test on Python ${{ matrix.python }}
+    name: Test on ${{ matrix.os }} Python ${{ matrix.python }}
     steps:
       - name: Checkout branch
         uses: actions/checkout@master
