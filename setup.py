@@ -1,7 +1,8 @@
-from setuptools import find_packages, Extension, setup
+import platform
 
 import numpy as np
 from Cython.Build import cythonize
+from setuptools import find_packages, Extension, setup
 
 
 def read(path):
@@ -17,8 +18,9 @@ extra_compile_args = [
     '-Wno-unused-function',
     '-O3',
     '-std=c++11',
-    '-stdlib=libc++'
 ]
+if platform.system().lower() == 'darwin':
+    extra_compile_args.append('-stdlib=libc++')
 to_cythonize = [
     Extension(
         'fbgbp.grid_belief_propagation', [
