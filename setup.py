@@ -16,7 +16,8 @@ extra_compile_args = [
     '-Wno-unused-variable',
     '-Wno-unused-function',
     '-O3',
-    '-std=c++11'
+    '-std=c++11',
+    '-stdlib=libc++'
 ]
 to_cythonize = [
     Extension(
