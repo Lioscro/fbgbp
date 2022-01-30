@@ -1,0 +1,1 @@
+class BeliefPropagationError(Exception): pass
