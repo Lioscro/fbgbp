@@ -1,7 +1,7 @@
-#include "grid_belief_propagation.hpp"
+#include "binary_belief_propagation.hpp"
 #include "parallel_for.hpp"
 
-GridBeliefPropagation::GridBeliefPropagation(
+BinaryBeliefPropagation::BinaryBeliefPropagation(
     uint8_t n_dims,
     const uint32_t* shape,
     uint8_t max_neighbors,
@@ -10,21 +10,33 @@ GridBeliefPropagation::GridBeliefPropagation(
     const double* potentials1,
     double p,
     double q
-) : n_dims(n_dims), p(p), q(q) {
-    this->alpha = p / q;
-    this->log_alpha = std::log(p) - std::log(q);
+) : p(p), q(q) {
     this->n_nodes = 1;
     for (uint8_t i = 0; i < n_dims; i++)
         this->n_nodes *= shape[i];
 
-    this->shape = new uint32_t[n_dims];
-    std::copy(&shape[0], &shape[n_dims], this->shape);
-    this->initialize_graph(max_neighbors, neighbor_offsets);
+    this->initialize_alpha(p, q);
+    this->initialize_grid(
+        n_dims, shape, max_neighbors, neighbor_offsets
+    );
     this->initialize_potentials(potentials0, potentials1);
 }
 
-GridBeliefPropagation::~GridBeliefPropagation() {
-    delete[] this->shape;
+BinaryBeliefPropagation::BinaryBeliefPropagation(
+    uint64_t n_nodes,
+    const uint8_t* n_neighbors,
+    const uint64_t* neighbors,
+    const double* potentials0,
+    const double* potentials1,
+    double p,
+    double q
+) : n_nodes(n_nodes), p(p), q(q) {
+    this->initialize_alpha(p, q);
+    this->initialize_neighbors(n_neighbors, neighbors);
+    this->initialize_potentials(potentials0, potentials1);
+}
+
+BinaryBeliefPropagation::~BinaryBeliefPropagation() {
     delete[] this->n_neighbors;
     for (uint64_t i = 0; i < this->n_nodes; i++)
         delete[] this->neighbors[i];
@@ -34,22 +46,51 @@ GridBeliefPropagation::~GridBeliefPropagation() {
     delete[] this->lambda;
 }
 
-void GridBeliefPropagation::initialize_graph(
-    uint8_t max_neighbors, int16_t** neighbor_offsets
+void BinaryBeliefPropagation::initialize_alpha(double p, double q) {
+    this->alpha = p / q;
+    this->log_alpha = std::log(p) - std::log(q);
+}
+
+void BinaryBeliefPropagation::initialize_neighbors(
+    const uint8_t* n_neighbors, const uint64_t* neighbors
+) {
+    this->n_neighbors = new uint8_t[this->n_nodes];
+    std::copy(&n_neighbors[0], &n_neighbors[this->n_nodes], &this->n_neighbors[0]);
+
+    this->neighbors = new uint64_t*[this->n_nodes];
+    uint64_t neighbors_i = 0;
+    for (uint64_t i = 0; i < this->n_nodes; i++) {
+        uint8_t _n_neighbors = this->n_neighbors[i];
+        this->neighbors[i] = new uint64_t[_n_neighbors];
+
+        std::copy(
+            &neighbors[neighbors_i],
+            &neighbors[neighbors_i + _n_neighbors],
+            &this->neighbors[i][0]
+        );
+        neighbors_i += _n_neighbors;
+    }
+}
+
+void BinaryBeliefPropagation::initialize_grid(
+    uint8_t n_dims,
+    const uint32_t* shape,
+    uint8_t max_neighbors,
+    int16_t** neighbor_offsets
 ) {
     // Create n_nodes x n_dims array of node coordinates
-    uint32_t* prod = new uint32_t[this->n_dims];
-    for (uint8_t i = 0; i < this->n_dims; i++) {
+    uint32_t* prod = new uint32_t[n_dims];
+    for (uint8_t i = 0; i < n_dims; i++) {
         prod[i] = 1;
-        for (uint8_t j = i+1; j < this->n_dims; j++)
-            prod[i] *= this->shape[j];
+        for (uint8_t j = i+1; j < n_dims; j++)
+            prod[i] *= shape[j];
     }
 
     uint32_t** node_coordinates = new uint32_t*[this->n_nodes];
     for (uint64_t i = 0; i < this->n_nodes; i++) {
-        node_coordinates[i] = new uint32_t[this->n_dims];
+        node_coordinates[i] = new uint32_t[n_dims];
         uint64_t remaining = i;
-        for (uint8_t j = 0; j < this->n_dims; j++) {
+        for (uint8_t j = 0; j < n_dims; j++) {
             node_coordinates[i][j] = remaining / prod[j];
             remaining %= prod[j];  // Does the compiler reuse previous result?
         }
@@ -67,9 +108,9 @@ void GridBeliefPropagation::initialize_graph(
             bool valid = true;
             int16_t* neighbor_offset = neighbor_offsets[j];
             uint32_t i_temp = 0;
-            for (uint8_t k = 0; k < this->n_dims; k++) {
+            for (uint8_t k = 0; k < n_dims; k++) {
                 int64_t coord = ((int64_t) node_coords[k]) + ((int64_t) neighbor_offset[k]);
-                valid = valid && coord >= 0 && coord < (int64_t) this->shape[k];
+                valid = valid && coord >= 0 && coord < (int64_t) shape[k];
                 i_temp += coord * prod[k];
             }
             neighbors_temp[n_neighbors] = i_temp;
@@ -92,7 +133,7 @@ void GridBeliefPropagation::initialize_graph(
     delete[] node_coordinates;
 }
 
-void GridBeliefPropagation::initialize_potentials(
+void BinaryBeliefPropagation::initialize_potentials(
     const double* potentials0, const double* potentials1
 ) {
     uint64_t n_messages = 0;
@@ -113,7 +154,7 @@ void GridBeliefPropagation::initialize_potentials(
         this->messages[i] = 0.;
 }
 
-void GridBeliefPropagation::run(
+void BinaryBeliefPropagation::run(
     double precision=.1,
     uint16_t max_iter=100,
     double log_bound=100.,
@@ -176,7 +217,7 @@ void GridBeliefPropagation::run(
     delete[] next_messages;
 }
 
-void GridBeliefPropagation::marginals(double* res) {
+void BinaryBeliefPropagation::marginals(double* res) {
     for (uint64_t i = 0; i < this->n_nodes; i++) {
         double denom = -this->lambda[i];
         uint64_t* neighbors = this->neighbors[i];

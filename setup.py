@@ -23,9 +23,18 @@ if platform.system().lower() == 'darwin':
     extra_compile_args.append('-stdlib=libc++')
 to_cythonize = [
     Extension(
-        'fbgbp.grid_belief_propagation', [
-            'fbgbp/grid_belief_propagation.pyx',
-            'fbgbp/src/grid_belief_propagation.cpp',
+        'fbgbp.binary_belief_propagation', [
+            'fbgbp/binary_belief_propagation.pyx',
+            'fbgbp/src/binary_belief_propagation.cpp',
+        ],
+        include_dirs=include_dirs,
+        extra_compile_args=extra_compile_args,
+        language='c++',
+    ),
+    Extension(
+        'fbgbp.binary_grid_belief_propagation', [
+            'fbgbp/binary_grid_belief_propagation.pyx',
+            'fbgbp/src/binary_belief_propagation.cpp',
         ],
         include_dirs=include_dirs,
         extra_compile_args=extra_compile_args,

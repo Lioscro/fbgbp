@@ -14,3 +14,6 @@ class TestMixin(TestCase):
         cls.potentials0_path = os.path.join(cls.fixtures_dir, 'potentials0.npy')
         cls.potentials1_path = os.path.join(cls.fixtures_dir, 'potentials1.npy')
         cls.shape_path = os.path.join(cls.fixtures_dir, 'shape.npy')
+
+        cls.n_neighbors_path = os.path.join(cls.fixtures_dir, 'n_neighbors.npy')
+        cls.neighbors_path = os.path.join(cls.fixtures_dir, 'neighbors.npy')

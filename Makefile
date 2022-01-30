@@ -8,7 +8,7 @@ install-dev:
 
 install-all: install-dev install
 
-test:
+test: clean
 	python setup.py build_ext --inplace
 	rm -f .coverage
 	nosetests --verbose --with-coverage --cover-package fbgbp tests/*
