@@ -69,7 +69,7 @@ public:
         bool taylor_approximation, /*=false*/
         uint64_t n_threads /*=1*/
     );
-    void marginals(double* res);
+    void marginals(double* res, double log_bound);
 };
 
 #endif  // BINARY_BELIEF_PROPAGATION_HPP_

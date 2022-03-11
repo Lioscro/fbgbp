@@ -221,13 +221,21 @@ void BinaryBeliefPropagation::run(
     delete[] next_messages;
 }
 
-void BinaryBeliefPropagation::marginals(double* res) {
+void BinaryBeliefPropagation::marginals(double* res, double log_bound=50.) {
     for (uint64_t i = 0; i < this->n_nodes; i++) {
         double denom = (double) -this->lambda[i];
         uint64_t* neighbors = this->neighbors[i];
         for (uint8_t j = 0; j < this->n_neighbors[i]; j++)
             // Denom is in log scale.
             denom -= (double) this->messages[this->message_index[i] + j];
-        res[i] = 1. / (1. + std::exp(denom));
+
+        // Deal with under/overflow.
+        if (denom < -log_bound) {
+            res[i] = 1.;
+        } else if (denom > log_bound) {
+            res[i] = 0.;
+        } else {
+            res[i] = 1. / (1. + std::exp(denom));
+        }
     }
 }
