@@ -16,7 +16,7 @@ cdef class _BinaryBeliefPropagation:
         self,
         double precision=.1,
         int max_iter=100,
-        double log_bound=100.,
+        double log_bound=50.,
         bool taylor_approximation=False,
         int n_threads=1
     ):

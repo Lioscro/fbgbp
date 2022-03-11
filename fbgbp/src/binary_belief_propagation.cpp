@@ -157,7 +157,7 @@ void BinaryBeliefPropagation::initialize_potentials(
 void BinaryBeliefPropagation::run(
     double precision=.1,
     uint16_t max_iter=100,
-    double log_bound=100.,
+    double log_bound=50.,
     bool taylor_approximation=false,
     uint64_t n_threads=1
 ) {
@@ -222,6 +222,7 @@ void BinaryBeliefPropagation::marginals(double* res) {
         double denom = (double) -this->lambda[i];
         uint64_t* neighbors = this->neighbors[i];
         for (uint8_t j = 0; j < this->n_neighbors[i]; j++)
+            // Denom is in log scale.
             denom -= (double) this->messages[this->message_index[i] + j];
         res[i] = 1. / (1. + std::exp(denom));
     }
