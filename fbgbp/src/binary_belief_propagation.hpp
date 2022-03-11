@@ -16,17 +16,17 @@ private:
     // Params
     double p;  // xi == xj
     double q;  // xi != xj
-    double alpha; // p / q
-    double log_alpha;  // log(p / q)
+    float alpha; // p / q
+    float log_alpha;  // log(p / q)
 
     // Messages -- messages are indexed in the order they appear in the
     // neighbors array. For example, for node i if we have neighbors[i][0] == j,
     // and this is the k'th element in the array, then messages[k] is the message
     // sent j -> i.
     uint64_t n_messages;
-    double* messages;
+    float* messages;
     uint64_t* message_index;
-    double* lambda;
+    float* lambda;
 
     void initialize_alpha(double p, double q);
     void initialize_neighbors(const uint8_t* n_neighbors, const uint64_t* neighbors);

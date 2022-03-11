@@ -65,4 +65,4 @@ class TestBinaryGridBeliefPropagation(TestMixin, TestCase):
             shape, neighbor_offsets, potentials0, potentials1, 0.7, 0.3
         )
         bp.run(precision=1e-3, max_iter=100)
-        np.testing.assert_allclose(marginals, bp.marginals())
+        np.testing.assert_allclose(marginals, bp.marginals(), atol=1e-2)
