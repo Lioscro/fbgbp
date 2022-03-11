@@ -14,8 +14,8 @@ private:
     uint64_t** neighbors;
 
     // Params
-    double p;  // xi == xj
-    double q;  // xi != xj
+    float p;  // xi == xj
+    float q;  // xi != xj
     float alpha; // p / q
     float log_alpha;  // log(p / q)
 

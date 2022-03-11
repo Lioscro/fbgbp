@@ -10,7 +10,9 @@ BinaryBeliefPropagation::BinaryBeliefPropagation(
     const double* potentials1,
     double p,
     double q
-) : p(p), q(q) {
+) {
+    this->p = (float) p;
+    this->q = (float) q;
     this->n_nodes = 1;
     for (uint8_t i = 0; i < n_dims; i++)
         this->n_nodes *= shape[i];
@@ -30,7 +32,9 @@ BinaryBeliefPropagation::BinaryBeliefPropagation(
     const double* potentials1,
     double p,
     double q
-) : n_nodes(n_nodes), p(p), q(q) {
+) : n_nodes(n_nodes) {
+    this->p = (float) p;
+    this->q = (float) q;
     this->initialize_alpha(p, q);
     this->initialize_neighbors(n_neighbors, neighbors);
     this->initialize_potentials(potentials0, potentials1);
