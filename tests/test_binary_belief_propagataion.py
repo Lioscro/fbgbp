@@ -73,4 +73,4 @@ class TestBinaryBeliefPropagation(TestMixin, TestCase):
             0.3
         )
         bp.run(precision=1e-3, max_iter=100)
-        np.testing.assert_allclose(marginals, bp.marginals().reshape(shape))
+        np.testing.assert_allclose(marginals, bp.marginals().reshape(shape), atol=1e-2)

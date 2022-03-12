@@ -10,7 +10,9 @@ BinaryBeliefPropagation::BinaryBeliefPropagation(
     const double* potentials1,
     double p,
     double q
-) : p(p), q(q) {
+) {
+    this->p = (float) p;
+    this->q = (float) q;
     this->n_nodes = 1;
     for (uint8_t i = 0; i < n_dims; i++)
         this->n_nodes *= shape[i];
@@ -30,7 +32,9 @@ BinaryBeliefPropagation::BinaryBeliefPropagation(
     const double* potentials1,
     double p,
     double q
-) : n_nodes(n_nodes), p(p), q(q) {
+) : n_nodes(n_nodes) {
+    this->p = (float) p;
+    this->q = (float) q;
     this->initialize_alpha(p, q);
     this->initialize_neighbors(n_neighbors, neighbors);
     this->initialize_potentials(potentials0, potentials1);
@@ -47,8 +51,8 @@ BinaryBeliefPropagation::~BinaryBeliefPropagation() {
 }
 
 void BinaryBeliefPropagation::initialize_alpha(double p, double q) {
-    this->alpha = p / q;
-    this->log_alpha = std::log(p) - std::log(q);
+    this->alpha = (float) (p / q);
+    this->log_alpha = (float) (std::log(p) - std::log(q));
 }
 
 void BinaryBeliefPropagation::initialize_neighbors(
@@ -137,19 +141,19 @@ void BinaryBeliefPropagation::initialize_potentials(
     const double* potentials0, const double* potentials1
 ) {
     uint64_t n_messages = 0;
-    double min_log = std::log(1e-6);
-    this->lambda = new double[this->n_nodes];
+    float min_log = std::log(1e-6);
+    this->lambda = new float[this->n_nodes];
     this->message_index = new uint64_t[this->n_nodes];
     for (uint64_t i = 0; i < this->n_nodes; i++) {
         this->message_index[i] = n_messages;
         n_messages += this->n_neighbors[i];
-        this->lambda[i] = (
+        this->lambda[i] = (float) ((
             potentials1[i] < 1e-6 ? min_log : std::log(potentials1[i])
-        ) - (potentials0[i] < 1e-6 ? min_log : std::log(potentials0[i]));
+        ) - (potentials0[i] < 1e-6 ? min_log : std::log(potentials0[i])));
     }
 
     this->n_messages = n_messages;
-    this->messages = new double[n_messages];
+    this->messages = new float[n_messages];
     for (uint64_t i = 0; i < n_messages; i++)
         this->messages[i] = 0.;
 }
@@ -157,14 +161,14 @@ void BinaryBeliefPropagation::initialize_potentials(
 void BinaryBeliefPropagation::run(
     double precision=.1,
     uint16_t max_iter=100,
-    double log_bound=100.,
+    double log_bound=50.,
     bool taylor_approximation=false,
     uint64_t n_threads=1
 ) {
     // messages will alternate to save space
-    double* messages2 = new double[this->n_messages];
-    double* last_messages = this->messages;
-    double* next_messages = messages2;
+    float* messages2 = new float[this->n_messages];
+    float* last_messages = this->messages;
+    float* next_messages = messages2;
 
     bool precision_reached = false;
     for (uint16_t n = 0; n < max_iter && !precision_reached; n++) {
@@ -175,14 +179,14 @@ void BinaryBeliefPropagation::run(
                 for (uint8_t from_i = 0; from_i < this->n_neighbors[to]; from_i++) {
                     uint64_t from = to_neighbors[from_i];
                     uint64_t* from_neighbors = this->neighbors[from];
-                    double message = this->lambda[from];
+                    float message = this->lambda[from];
                     for (
                         uint8_t from_neighbor_i = 0;
                         from_neighbor_i < this->n_neighbors[from];
                         from_neighbor_i++
                     )
                         message += (
-                            (double) (from_neighbors[from_neighbor_i] != to)
+                            (float) (from_neighbors[from_neighbor_i] != to)
                         ) * last_messages[from_neighbor_i + this->message_index[from]];
 
                     // If messages (which is actually the log-message) is
@@ -198,7 +202,7 @@ void BinaryBeliefPropagation::run(
                             - std::pow(message, 3) * (this->alpha * (this->alpha - 1))
                             / (3 * std::pow(1 + this->alpha, 3));
                     } else {
-                        double c = std::exp(message);
+                        float c = std::exp(message);
                         message = std::log((this->q + this->p * c) / (this->p + this->q * c));
                     }
                     next_messages[from_i + this->message_index[to]] = message;
@@ -207,22 +211,31 @@ void BinaryBeliefPropagation::run(
         });
         std::swap(last_messages, next_messages);
 
-        double diff = 0;
+        float diff = 0;
         for (uint64_t i = 0; i < n_messages; i++)
             diff += std::pow(last_messages[i] - next_messages[i], 2);
-        diff /= (double) n_messages;
+        diff /= (float) n_messages;
         precision_reached = diff < precision;
     }
     this->messages = last_messages;
     delete[] next_messages;
 }
 
-void BinaryBeliefPropagation::marginals(double* res) {
+void BinaryBeliefPropagation::marginals(double* res, double log_bound=50.) {
     for (uint64_t i = 0; i < this->n_nodes; i++) {
-        double denom = -this->lambda[i];
+        double denom = (double) -this->lambda[i];
         uint64_t* neighbors = this->neighbors[i];
         for (uint8_t j = 0; j < this->n_neighbors[i]; j++)
-            denom -= this->messages[this->message_index[i] + j];
-        res[i] = 1. / (1. + std::exp(denom));
+            // Denom is in log scale.
+            denom -= (double) this->messages[this->message_index[i] + j];
+
+        // Deal with under/overflow.
+        if (denom < -log_bound) {
+            res[i] = 1.;
+        } else if (denom > log_bound) {
+            res[i] = 0.;
+        } else {
+            res[i] = 1. / (1. + std::exp(denom));
+        }
     }
 }

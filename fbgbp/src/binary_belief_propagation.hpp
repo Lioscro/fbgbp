@@ -14,19 +14,19 @@ private:
     uint64_t** neighbors;
 
     // Params
-    double p;  // xi == xj
-    double q;  // xi != xj
-    double alpha; // p / q
-    double log_alpha;  // log(p / q)
+    float p;  // xi == xj
+    float q;  // xi != xj
+    float alpha; // p / q
+    float log_alpha;  // log(p / q)
 
     // Messages -- messages are indexed in the order they appear in the
     // neighbors array. For example, for node i if we have neighbors[i][0] == j,
     // and this is the k'th element in the array, then messages[k] is the message
     // sent j -> i.
     uint64_t n_messages;
-    double* messages;
+    float* messages;
     uint64_t* message_index;
-    double* lambda;
+    float* lambda;
 
     void initialize_alpha(double p, double q);
     void initialize_neighbors(const uint8_t* n_neighbors, const uint64_t* neighbors);
@@ -65,11 +65,11 @@ public:
     void run(
         double precision, /*=.1*/
         uint16_t max_iter, /*=100*/
-        double log_bound, /*=100.*/
+        double log_bound, /*=50.*/
         bool taylor_approximation, /*=false*/
         uint64_t n_threads /*=1*/
     );
-    void marginals(double* res);
+    void marginals(double* res, double log_bound);
 };
 
 #endif  // BINARY_BELIEF_PROPAGATION_HPP_

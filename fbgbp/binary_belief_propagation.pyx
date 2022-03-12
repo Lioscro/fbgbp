@@ -16,7 +16,7 @@ cdef class _BinaryBeliefPropagation:
         self,
         double precision=.1,
         int max_iter=100,
-        double log_bound=100.,
+        double log_bound=50.,
         bool taylor_approximation=False,
         int n_threads=1
     ):
@@ -35,7 +35,7 @@ cdef class _BinaryBeliefPropagation:
         """
         self.bp.run(precision, max_iter, log_bound, taylor_approximation, n_threads)
 
-    def marginals(self):
+    def marginals(self, double log_bound=50.):
         """Compute the marginal probability of being in state 1 of all nodes.
 
         Returns:
@@ -43,7 +43,7 @@ cdef class _BinaryBeliefPropagation:
             nodes. This is essentially the flattened multi-dimensional array.
         """
         cdef np.ndarray[np.double_t, ndim=1] marginals = np.empty(self.n_nodes)
-        self.bp.marginals(&marginals[0])
+        self.bp.marginals(&marginals[0], log_bound)
         return marginals
 
 
