@@ -19,8 +19,10 @@ extra_compile_args = [
     '-O3',
     '-std=c++11',
 ]
+extra_link_args = []
 if platform.system().lower() == 'darwin':
     extra_compile_args.append('-stdlib=libc++')
+    extra_link_args.append('-stdlib=libc++')
 to_cythonize = [
     Extension(
         'fbgbp.binary_belief_propagation', [
@@ -29,6 +31,7 @@ to_cythonize = [
         ],
         include_dirs=include_dirs,
         extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
         language='c++',
     ),
     Extension(
@@ -38,6 +41,7 @@ to_cythonize = [
         ],
         include_dirs=include_dirs,
         extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
         language='c++',
     ),
 ]
