@@ -21,6 +21,7 @@ extra_compile_args = [
 ]
 extra_link_args = []
 if platform.system().lower() == 'darwin':
+    extra_compile_args.append('-stdlib=libc++')
     extra_link_args.append('-stdlib=libc++')
 to_cythonize = [
     Extension(
